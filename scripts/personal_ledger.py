@@ -27,6 +27,13 @@ def build_parser() -> argparse.ArgumentParser:
     propose.add_argument("--keywords")
     propose.add_argument("--description")
 
+    setup = sub.add_parser("setup-profile", help="Create or update required base profile")
+    setup.add_argument("--user-name")
+    setup.add_argument("--base-currency")
+    setup.add_argument("--timezone")
+    setup.add_argument("--privacy-acknowledged", action="store_true")
+    setup.add_argument("--save-source-text", choices=["true", "false"])
+
     sub.add_parser("confirm", help="Confirm pending record")
     sub.add_parser("cancel", help="Cancel pending record")
 
@@ -64,6 +71,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if command == "propose":
             output = commands.propose(data)
+        elif command == "setup-profile":
+            output = commands.setup_profile(data)
         elif command == "confirm":
             output = commands.confirm()
         elif command == "cancel":

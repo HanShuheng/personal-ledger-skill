@@ -15,6 +15,13 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "default_currency": "CNY",
     "always_confirm": True,
     "save_source_text": True,
+    "profile_required": True,
+    "profile": {
+        "user_name": "",
+        "base_currency": "",
+        "timezone": "",
+        "privacy_acknowledged": False,
+    },
     "expense_categories": EXPENSE_CATEGORIES,
     "income_categories": INCOME_CATEGORIES,
     "category_keywords": {
@@ -105,7 +112,59 @@ def load_config(paths: Paths | None = None) -> dict[str, Any]:
         with paths.config_file.open("r", encoding="utf-8") as f:
             user_config = json.load(f)
         config = _merge_config(config, user_config)
+    profile = config.get("profile") or {}
+    if profile.get("base_currency"):
+        config["default_currency"] = str(profile["base_currency"]).upper()
     return config
+
+
+def load_user_config(paths: Paths | None = None) -> dict[str, Any]:
+    paths = paths or get_paths()
+    if not paths.config_file.exists():
+        return {}
+    with paths.config_file.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_user_config(user_config: dict[str, Any], paths: Paths | None = None) -> None:
+    paths = ensure_data_dir(paths or get_paths())
+    with paths.config_file.open("w", encoding="utf-8") as f:
+        json.dump(user_config, f, ensure_ascii=False, indent=2)
+
+
+def missing_profile_fields(config: dict[str, Any]) -> list[str]:
+    if not config.get("profile_required", True):
+        return []
+    profile = config.get("profile") or {}
+    missing: list[str] = []
+    if not str(profile.get("user_name") or "").strip():
+        missing.append("user_name")
+    if not str(profile.get("base_currency") or "").strip():
+        missing.append("base_currency")
+    if not str(profile.get("timezone") or "").strip():
+        missing.append("timezone")
+    if profile.get("privacy_acknowledged") is not True:
+        missing.append("privacy_acknowledged")
+    return missing
+
+
+def profile_prompt(paths: Paths, missing: list[str]) -> str:
+    labels = {
+        "user_name": "记账主体/称呼",
+        "base_currency": "基础币种",
+        "timezone": "时区",
+        "privacy_acknowledged": "隐私保存确认",
+    }
+    missing_text = "、".join(labels.get(field, field) for field in missing)
+    return (
+        "ERROR 个人记账基础信息尚未完善，本插件暂不可使用。\n"
+        f"- 缺少：{missing_text}\n"
+        "- 请先补充：记账主体/称呼、基础币种、时区，并确认已知晓本插件会在本地保存个人流水和原始输入等敏感信息。\n"
+        "- CowAgent 可调用："
+        "python {baseDir}/scripts/personal_ledger.py setup-profile "
+        "--user-name \"你的称呼\" --base-currency CNY --timezone Asia/Shanghai --privacy-acknowledged\n"
+        f"- 配置文件路径：{paths.config_file}"
+    )
 
 
 def _copy_default_config() -> dict[str, Any]:

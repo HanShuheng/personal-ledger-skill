@@ -57,6 +57,12 @@ id,date,time,type,amount,currency,category,keywords,description,source_text,crea
 
 ## CLI 用法
 
+首次使用必须先完善基础信息。未完善前，记账、确认、查询、修改、删除和导出都会被阻断，并持续提示用户补充基础信息。
+
+```bash
+python scripts/personal_ledger.py setup-profile --user-name "你的称呼" --base-currency CNY --timezone Asia/Shanghai --privacy-acknowledged
+```
+
 ```bash
 python scripts/personal_ledger.py propose --text "今天午饭花了32"
 python scripts/personal_ledger.py confirm
@@ -76,6 +82,12 @@ python scripts/personal_ledger.py info
 
 ```json
 {
+  "profile": {
+    "user_name": "你的称呼",
+    "base_currency": "CNY",
+    "timezone": "Asia/Shanghai",
+    "privacy_acknowledged": true
+  },
   "save_source_text": false
 }
 ```
@@ -98,6 +110,7 @@ python -m unittest discover -s tests
 
 ```bash
 tmpdir="$(mktemp -d)"
+COW_WORKSPACE="$tmpdir" python scripts/personal_ledger.py setup-profile --user-name "测试用户" --base-currency CNY --timezone Asia/Shanghai --privacy-acknowledged
 COW_WORKSPACE="$tmpdir" python scripts/personal_ledger.py propose --text "今天午饭花了32"
 COW_WORKSPACE="$tmpdir" python scripts/personal_ledger.py confirm
 COW_WORKSPACE="$tmpdir" python scripts/personal_ledger.py summary --month "$(date +%Y-%m)"

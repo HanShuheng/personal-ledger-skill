@@ -5,7 +5,7 @@ license: MIT
 compatibility: CowAgent 技能系统；Python 3.10+；CSV 本地存储；默认使用 COW_WORKSPACE 隔离运行数据。
 metadata:
   author: HanShuheng
-  version: 0.1.0
+  version: 0.1.1
   language: zh-CN
   category: productivity
   tags:
@@ -33,6 +33,7 @@ allowed-tools: terminal file
 
 - 记录个人支出和进账流水。
 - 写入前总是确认，避免误记账。
+- 首次使用必须先完善基础信息；未完善前，本插件不可用于记账、确认、查询、修改、删除或导出。
 - 支持修改待确认记录，例如“改成 35”“分类改成交通”。
 - 支持查询本月汇总、分类汇总、最近流水。
 - 支持修改或删除上一笔已确认流水。
@@ -53,6 +54,29 @@ allowed-tools: terminal file
 ```
 
 ## 用户意图与命令
+
+### 首次使用：完善基础信息
+
+用户第一次使用或任何命令返回“基础信息尚未完善”时，必须先引导用户补充：
+
+- 记账主体/称呼。
+- 基础币种，例如 `CNY`。
+- 时区，例如 `Asia/Shanghai`。
+- 是否确认已知晓本插件会在本地保存个人流水、备注和原始输入等敏感信息。
+
+没有完成这些信息前，不要调用记账、确认、查询、修改、删除或导出命令；如果用户继续要求使用，继续提示完善基础信息。
+
+用户提供完整信息后执行：
+
+```bash
+python {baseDir}/scripts/personal_ledger.py setup-profile --user-name "<记账主体或称呼>" --base-currency CNY --timezone Asia/Shanghai --privacy-acknowledged
+```
+
+如果用户明确要求不保存原始输入：
+
+```bash
+python {baseDir}/scripts/personal_ledger.py setup-profile --user-name "<记账主体或称呼>" --base-currency CNY --timezone Asia/Shanghai --privacy-acknowledged --save-source-text false
+```
 
 ### 记支出
 

@@ -3,6 +3,13 @@
   "default_currency": "CNY",
   "always_confirm": true,
   "save_source_text": true,
+  "profile_required": true,
+  "profile": {
+    "user_name": "示例用户",
+    "base_currency": "CNY",
+    "timezone": "Asia/Shanghai",
+    "privacy_acknowledged": true
+  },
   "expense_categories": ["餐饮", "交通", "购物", "住房", "水电", "通讯", "娱乐", "学习", "医疗", "人情", "旅行", "运动", "其他"],
   "income_categories": ["工资", "奖金", "兼职", "红包", "退款", "理财", "报销", "其他"],
   "category_keywords": {

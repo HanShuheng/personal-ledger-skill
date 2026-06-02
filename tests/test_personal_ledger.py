@@ -91,6 +91,8 @@ class CliTest(unittest.TestCase):
     def test_propose_confirm_summary_and_list(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             workspace = Path(tmp)
+            setup = self.run_cli(workspace, "setup-profile", "--user-name", "测试用户", "--base-currency", "CNY", "--timezone", "Asia/Shanghai", "--privacy-acknowledged")
+            self.assertEqual(setup.returncode, 0, setup.stderr + setup.stdout)
             proposed = self.run_cli(workspace, "propose", "--text", "今天午饭花了32")
             self.assertEqual(proposed.returncode, 0, proposed.stderr + proposed.stdout)
             self.assertIn("准备记录", proposed.stdout)
@@ -117,6 +119,7 @@ class CliTest(unittest.TestCase):
     def test_update_pending_cancel_and_delete_last(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             workspace = Path(tmp)
+            self.assertEqual(self.run_cli(workspace, "setup-profile", "--user-name", "测试用户", "--base-currency", "CNY", "--timezone", "Asia/Shanghai", "--privacy-acknowledged").returncode, 0)
             self.assertEqual(self.run_cli(workspace, "propose", "--text", "昨天打车18.5").returncode, 0)
             updated = self.run_cli(workspace, "update-last", "--amount", "35", "--category", "交通")
             self.assertIn("已更新待确认记录", updated.stdout)
@@ -130,6 +133,7 @@ class CliTest(unittest.TestCase):
     def test_income_export_and_info(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             workspace = Path(tmp)
+            self.assertEqual(self.run_cli(workspace, "setup-profile", "--user-name", "测试用户", "--base-currency", "CNY", "--timezone", "Asia/Shanghai", "--privacy-acknowledged").returncode, 0)
             self.assertEqual(self.run_cli(workspace, "propose", "--text", "今天工资到账12000").returncode, 0)
             self.assertEqual(self.run_cli(workspace, "confirm").returncode, 0)
             csv_path = workspace / "personal_ledger" / "transactions.csv"
@@ -142,6 +146,27 @@ class CliTest(unittest.TestCase):
 
             info = self.run_cli(workspace, "info")
             self.assertIn("记录数：1", info.stdout)
+            self.assertIn("基础信息：已完善", info.stdout)
+
+    def test_business_commands_block_until_profile_completed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            blocked = self.run_cli(workspace, "propose", "--text", "今天午饭花了32")
+            self.assertNotEqual(blocked.returncode, 0)
+            self.assertIn("基础信息尚未完善", blocked.stdout)
+            self.assertFalse((workspace / "personal_ledger" / "pending_confirm.json").exists())
+
+            partial = self.run_cli(workspace, "setup-profile", "--user-name", "测试用户")
+            self.assertNotEqual(partial.returncode, 0)
+            self.assertIn("基础信息尚未完善", partial.stdout)
+
+            completed = self.run_cli(workspace, "setup-profile", "--user-name", "测试用户", "--base-currency", "CNY", "--timezone", "Asia/Shanghai", "--privacy-acknowledged")
+            self.assertEqual(completed.returncode, 0, completed.stderr + completed.stdout)
+            self.assertIn("基础信息已完善", completed.stdout)
+
+            proposed = self.run_cli(workspace, "propose", "--text", "今天午饭花了32")
+            self.assertEqual(proposed.returncode, 0, proposed.stderr + proposed.stdout)
+            self.assertIn("准备记录", proposed.stdout)
 
 
 if __name__ == "__main__":
